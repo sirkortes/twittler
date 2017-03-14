@@ -1,0 +1,250 @@
+
+body { 
+  font-family: Helvetica, Arial, sans-serif;
+  font-weight: lighter;
+  background-color: #f9f9fd;
+  margin: 0px;
+}
+
+header {
+  text-align: center;
+  color: white;
+  font-weight: lighter;
+  letter-spacing: 1px;
+  font-size: 25px;
+  height: 30px;
+  padding: 10px 20px;
+  background-color: rgb(180, 170, 255);
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+#title {
+  float: left;
+  margin: 0 0 0 20px;
+}
+
+#birdie{
+  transform: translateX(-100px);
+}
+
+#search {
+    background-color: white;
+    overflow: hidden;
+    min-height: 20px;
+    max-height: 20px;
+    min-width: 180px;
+    max-width: 180px;
+    padding: 5px 10px;
+    color: #666;
+    position: fixed;
+    right: 50px;
+    top: 10px;
+    border-radius: 20px;
+    outline-width: 0;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+#searchfield{
+  background-color: white;
+  text-align: right;
+  margin: 0 5px;
+  overflow: hidden;
+  max-height: 20px;
+  min-height: 20px;
+  min-width: 146px;
+  color: #666;
+  float: right;
+  outline-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+#searchicon{
+  float: right;
+  cursor: pointer;
+}
+
+#feed{
+  transition: all .4s ease-in;
+    width: 500px;
+    margin: 0px auto;
+}
+
+#compose {
+    transition: all .2s ease-in;
+    background-color: #f1efff;
+    margin: 70px auto 0px auto;
+    padding: 20px 20px 20px 20px;
+    max-width: 420px;
+    min-height: 33px;
+    border-radius: 6px 6px 6px 6px;
+
+}
+
+#composing {
+  transition: all .2s ease-in;
+  border-radius: 6px 6px 6px 6px;
+  border: 1px solid #dcd5fd;
+  background-color: white;
+  padding: 10px;
+  outline-width: 0;
+  color: #7a7d96;
+  letter-spacing: .5px;
+  min-height: 60px;
+}
+
+.placeholder {
+  color: #ccc !important;
+  min-height: 20px !important;
+}
+
+#compose_hud{
+  transition: all .2s ease-in;
+  display: none;
+  height: 45px;
+  margin-top: 5px;
+}
+
+#char_count {
+    transition: all .2s ease-in;
+    color: #dcd5fd;
+    height: 10px;
+    float: right;
+    font-size: 14px;
+    padding: 10px;
+    margin-top: 10px;
+    line-height: 12px;
+}
+
+.char_count_alert{
+  color: #ef4566 !important;
+}
+
+#compose_submit {
+  transition: all .1s ease-in;
+  padding: 10px;
+  margin: 8px 3px;
+  border-radius: 6px 6px 6px 6px;
+  color: white;
+  outline-width: 0;
+  background-color: #dcd5fd;
+  width: 40px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: normal;
+  float: right;
+}
+
+
+
+#compose_submit:hover{
+  background-color: rgb(180, 170, 255);
+  box-shadow: 1px 2px 4px #dcd5fd;
+}
+
+#compose_submit:before, 
+#compose_submit:after {
+  clear: both;
+}
+
+#tweetNotifyArea {
+    margin: 0px auto;
+    padding: 10px 0;
+    max-width: 420px;
+}
+
+#tweetnotify {
+  transition: all .2s ease-in;
+    display: none;
+    text-align: center;
+    margin: 10px;
+    color: rgb(180, 170, 255);
+    letter-spacing: 1px;
+    font-size: 10px !important;
+    cursor: pointer;
+}
+
+#oldTweetsNotifyArea {
+    margin: 0px auto;
+    padding: 10px 0;
+    max-width: 420px;
+}
+
+#oldTweetsNotify {
+  transition: all .2s ease-in;
+    display: none;
+    text-align: center;
+    margin: 10px;
+    color: rgb(180, 170, 255);
+    letter-spacing: 1px;
+    font-size: 10px !important;
+}
+
+
+
+#searchmessage {
+  transition: all .2s ease-in;
+    display: none;
+    color: rgba(195, 187, 255, .7);
+    font-weight: lighter;
+    font-size: 14px;
+    letter-spacing: .3px;
+    text-align: center;
+}
+
+
+.tweet {
+  transition: all .2s ease-in;
+  opacity: 0;
+  background-color: rgba(255,255,255,1);
+  margin: 0px auto 20px auto;
+  padding: 20px 20px 6px 20px;
+  max-width: 420px;
+  min-height: 33px;
+  border-radius: 6px 6px 6px 6px;
+  box-shadow: 1px 1px 8px #f9f9fd;
+  border: 1px solid #dcd5fd;
+}
+
+.tweet:hover{
+  box-shadow: 1px 1px 8px #dcd5fd;
+  border: 1px solid white;
+}
+
+.tweet_user {
+  margin: 0;
+}
+
+.user_link {
+  cursor: pointer;
+  color: rgba(195, 187, 255, .7);
+  font-weight: lighter;
+  font-size: 14px;
+  letter-spacing: .3px;
+}
+
+.user_link:hover {
+  color: rgb(180, 170, 255);
+}
+
+
+.tweet_message{
+  color: #7a7d96;
+  letter-spacing: .5px;
+  margin: 0 auto;
+  padding: 14px;
+  display: block;
+}
+
+.tweet_date {
+  text-align: right;
+  font-size: 12px;
+  color: #d8d3ff;
+  font-weight: lighter;
+  
+}
+
+

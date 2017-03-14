@@ -1,27 +1,589 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
+    <link rel="stylesheet" href="style.css">
     <script src="jquery.js"></script>
     <script src="data_generator.js"></script>
-  </head>
-  <body>
+</head>
+
+<body>
     <script>
+        $(document).ready(function() {
 
-      $(document).ready(function(){
-        var $body = $('body');
-        $body.html('');
 
-        var index = streams.home.length - 1;
-        while(index >= 0){
-          var tweet = streams.home[index];
-          var $tweet = $('<div></div>');
-          $tweet.text('@' + tweet.user + ': ' + tweet.message);
-          $tweet.appendTo($body);
-          index -= 1;
-        }
+            // Initial Tweets Source
+            window.tweets_source = window.streams.home;
+            window.tweets_start = window.tweets_source.length;
+            window.tweets_end = window.tweets_start;
+            window.tweets_pending = [];
 
-      });
 
+            //FUNCTIONS
+
+              // sorts chrono or reverse
+              var inOrder = function(value, array) {
+                  // true = chronological, false = reversed
+                  return array.sort(function(a, b) {
+                      var atime = a.created_at;
+                      var btime = b.created_at;
+                      if (value) {
+                          return ((atime < btime) ? -1 : ((atime > btime) ? 1 : 0));
+                      } else {
+                          return ((atime < btime) ? 1 : ((atime > btime) ? -1 : 0));
+                      }
+                  });
+              }
+
+              // lets you know if scrolled to end of feed
+              var atBottom = function() {
+                  // 
+                  return ($(window).scrollTop() + $(window).height() === $(document).height());
+              }
+
+              // formats tweet time
+              var timeAgo = function(milliseconds) {
+
+                  milliseconds = Number(milliseconds);
+                  var now = new Date().getTime();
+                  var elapsed = (now - milliseconds);
+
+                  var secs = Math.ceil(elapsed / 1000);
+                  var mins = Math.floor(secs / 60);
+                  var hours = Math.floor(mins / 60);
+                  var days = Math.floor(hours / 24);
+
+                  if (days > 0) {
+
+                      return days + "d";
+
+                  } else if (hours > 0) {
+
+                      return hours + "h";
+
+                  } else if (mins > 0) {
+
+                      return mins + "m";
+
+                  } else {
+
+                      return secs + "s";
+                  }
+              }
+
+
+
+              // 
+              // Search 
+              // 
+
+              // main search function
+              var search_twittler = function() {
+
+                  var matched = [];
+                  var q = $searchfield.text().toLowerCase().split(' ');
+                  var users = Object.keys(streams.users);
+
+                  if (users.some(function(user) {
+                          return user === q[0].toLowerCase();
+                      })) {
+
+                      search_results.tweets = streams.users[q[0]];
+                      search_results.query = q[0];
+                      search_results.source = 'user';
+
+                  } else {
+
+                      if (q.length > 1) {
+                          var qre = new RegExp('( ' + q.join(' | ') + ' )');
+                      } else {
+                          var qre = q[0];
+                      }
+
+                      users.forEach(function(user) {
+                          streams.users[user].forEach(function(tweet) {
+                              if (tweet.message.toLowerCase().match(qre) !== null) {
+                                  matched.push(tweet);
+                              }
+
+                          });
+                      });
+
+                      search_results.tweets = matched;
+                      search_results.query = q.join(' ');
+                      search_results.source = 'search';
+
+                  }
+
+                  updateTweetsSource(search_results);
+              }
+
+
+              var updateTweetsSource = function(search_results) {
+
+                  if (search_results.source !== 'home') {
+                      if (search_results.query !== 'visitor') {
+                          $compose_field.hide();
+                      }
+                      updateSearchMessage();
+                      $searchmessage.show();
+                  } else {
+                      $searchmessage.hide();
+                      $compose_field.show();
+                  }
+
+                  $tweetnotify.hide();
+                  $oldTweetsNotify.hide();
+                  window.tweets_source = search_results.tweets;
+                  window.tweets_start = window.tweets_source.length;
+                  window.tweets_end = window.tweets_start;
+                  window.tweets_pending = [];
+                  $feed.html('');
+                  getOlderTweets();
+                  checkNewTweets();
+              }
+
+              var searchicon_toggle = function(pick) {
+
+                  if (pick === "close" || $searchicon.attr('src') === icon_search) {
+
+                      $searchicon.attr({
+                          src: icon_close,
+                          width: 16,
+                          height: 16
+                      }).css("padding", "2px 2px 0 0");
+
+                  } else if (pick === "search" || $searchicon.attr('src') === icon_close) {
+
+                      $searchicon.attr({
+                          src: icon_search,
+                          width: 20,
+                          height: 20
+                      }).css("padding", "0px");
+                  }
+
+              }
+
+              var userSearch = function(user) {
+                  $searchfield.text(user);
+                  searchicon_toggle();
+                  search_twittler();
+              }
+
+              var updateSearchMessage = function(x) {
+
+                  var long = search_results.tweets.length;
+
+                  if (search_results.source === 'user') {
+
+
+
+                      if (search_results.query === 'visitor') {
+
+                          $searchmessage.text('You have ' + long + (long > 1 ? ' Twittles' : ' Twittle'));
+
+                      } else {
+
+                          $searchmessage.text(long + (long > 1 ? ' Twittles' : ' Twittle') + ' from ' + search_results.query);
+                      }
+
+                  } else if (search_results.source === 'search') {
+
+                      $searchmessage.text(long + (long > 1 ? ' Twittles' : ' Twittle') + ' Twittles match \'' + search_results.query + '\'');
+                  }
+
+              }
+
+              // 
+              // for NEW tweets
+              // 
+
+              var checkNewTweets = function(newTweetMessage) {
+
+                  if (newTweetMessage) {
+
+                      var latest = window.tweets_source.slice(window.tweets_end, window.tweets_source.length);
+
+                      var newIndex = latest.findIndex(function(tweet) {
+                          return tweet.message === newTweetMessage;
+                      });
+
+                      var newtweets = window.tweets_source.slice(window.tweets_end, (window.tweets_end + newIndex + 1));
+                      window.tweets_end += (newIndex + 1);
+
+                  } else {
+
+                      if (window.tweets_source.length > window.tweets_end) {
+
+                          var newtweets = window.tweets_source.slice(window.tweets_end, (window.tweets_end + 11));
+
+                          window.tweets_end += newtweets.length;
+                      }
+
+                  }
+
+                  if (newtweets) {
+                      updateTweetsPending(newtweets);
+                  }
+
+                  if (newTweetMessage) {
+                      showNewTweets();
+                  } else {
+                      if (window.tweets_pending.length > 0) {
+                          updateTweetsNotify();
+                      }
+                  }
+
+                  setTimeout(checkNewTweets, 2000);
+              }
+
+              var updateTweetsPending = function(newtweets) {
+
+                  window.tweets_pending = window.tweets_pending.concat(newtweets);
+              }
+
+              var updateTweetsNotify = function() {
+                  // update the notification
+                  var long = window.tweets_pending.length;
+                  $tweetnotify.text('Show ' + long + ' new ' + (long > 1 ? 'Twittles' : 'Twittle')).show();
+              }
+
+              var showNewTweets = function() {
+                  $tweetnotify.hide();
+                  updateTimes();
+                  feedTweets(window.tweets_pending, 'top');
+                  updateSearchMessage(window.tweets_pending.length);
+                  window.tweets_pending = [];
+              }
+
+              // 
+              // for OLD tweets
+              // 
+
+              var getOlderTweets = function() {
+
+                  var from = ((tweets_start - 11) < 0) ? 0 : (tweets_start - 11);
+                  var newchunk = window.tweets_source.slice(from, window.tweets_start);
+                  var newchunk = inOrder(false, newchunk);
+                  window.tweets_start = from;
+                  updateTimes();
+                  if (newchunk.length > 0) {
+                      feedTweets(newchunk);
+                  } else {
+                      $oldTweetsNotify.show();
+                  }
+
+              }
+
+              // 
+              // for SHOWING tweets
+              // 
+
+              var updateTimes = function() {
+
+                  var dates = $(".tweet_date").get();
+                  dates.forEach(function(tweetdate) {
+                      var newTime = timeAgo($(tweetdate).attr('data-ms'));
+                      $(tweetdate).html(newTime);
+                  });
+              }
+
+              var feedTweets = function(tweets, target) {
+
+                  var delay = 80;
+                  tweets.forEach(function(tweet) {
+                      create(tweet, target, delay);
+                      delay += 80;
+                  });
+              }
+
+              var create = function(tweet, target, delay) {
+
+                  var $tweet = $('<div class="tweet"></div>');
+
+                  var $tweet_user = $('<p class="tweet_user"></p>');
+                  var $user_link = $('<a class="user_link"></a>').data('user', tweet.user);
+
+                  $user_link.text('@' + tweet.user).appendTo($tweet_user);
+                  $tweet_user.appendTo($tweet);
+
+                  var $tweet_message = $('<p class="tweet_message"></p>');
+                  $tweet_message.text(tweet.message).appendTo($tweet);
+
+                  var tweet_ms = tweet.created_at.getTime();
+                  var $tweet_date = $('<p class="tweet_date" data-ms="' + tweet_ms + '"></p>');
+                  var tweetime = timeAgo(tweet_ms);
+                  $tweet_date.text(tweetime).appendTo($tweet);
+
+                  insert($tweet, target, delay);
+              }
+
+              var insert = function(tweet, target, delay) {
+
+                  setTimeout(function() {
+
+                      if (target === 'top') {
+                          tweet.prependTo($feed);
+                      } else {
+                          tweet.appendTo($feed);
+
+
+                      }
+
+                      tweet.animate({
+                          'opacity': '1'
+                      }, 100);
+
+                  }, delay);
+              }
+
+
+              // 
+              // create a tweet
+              // 
+
+              var reset_compose_bubble = function() {
+                  $compose_field.addClass('placeholder');
+                  $compose_field.delay(1200).text('');
+                  $compose_hud.hide();
+                  $compose_count.text(140);
+                  $compose_field.blur();
+              }
+
+              var composeSubmit = function() {
+                  // if text is > 140, keep open and bounce red number
+                  // else create new tweet and close compose bubble
+                  var message = $compose_field.text();
+                  if (message.length > 140) {
+                      // bounce red number
+                      var over = (message.length - 140);
+                      $compose_count.text('You are ' + over + (over > 1 ? ' characters' : ' character') + ' over the limit');
+
+                  } else if (message.length === 0) {
+                      // close or cat got your thumb joke
+                      $compose_count.text('What, cat got your thumb?');
+
+                  } else {
+                      // show new tweets up to our new tweet
+                      writeTweet(message);
+                      reset_compose_bubble();
+                      checkNewTweets(message);
+                      // $compose_field.blur();
+                  }
+              }
+
+
+
+            // BUILD
+
+
+              // tracking var
+              var rendered = 0;
+
+              // body
+              var $body = $('body');
+              $body.html('');
+
+              // header
+              var $header = $('<header></header>');
+              // $header.text('TWITTLER');
+              $header.appendTo($body);
+
+              // title
+              var $title = $('<p id="title">TWITTLER</p>');
+              $title.appendTo($header);
+
+              // birdicon
+              var $birdie = $('<img id="birdie" src="https://cdn1.iconfinder.com/data/icons/logo-s-icon-pack-collection/783/twitter-128.png" width="30" height="20">');
+              $birdie.appendTo($header);
+
+              // search
+              var $search = $('<div id="search"></div>');
+
+              var icon_close = "https://cdn1.iconfinder.com/data/icons/random-crafticons/48/misc-_close_-128.png";
+
+              var icon_search = "http://cdn0.iconfinder.com/data/icons/slim-square-icons-basics/100/basics-19-128.png";
+
+              // searchicon
+              var $searchicon = $('<img id="searchicon" width="20" height="20">').attr('src', icon_search);
+
+              $searchicon.appendTo($search);
+
+              // searchfield
+              var $searchfield = $('<div id="searchfield" contenteditable="true" role="textbox"></div>');
+
+              $searchfield.appendTo($search);
+              $search.appendTo($header);
+
+              // compose bubble
+              var $compose_bubble = $('<div id="compose"></div>');
+              $compose_bubble.appendTo($body);
+
+              // compose field
+              $compose_field = $('<div id="composing" class="placeholder" contenteditable="true" role="textbox"></div>');
+              var compose_placeholder = "What's happening?";
+              $compose_field.text(compose_placeholder);
+              $compose_field.appendTo($compose_bubble);
+
+              // compose hud
+              var $compose_hud = $('<div id="compose_hud"></div>');
+              $compose_hud.appendTo($compose_bubble);
+
+              // compose submit btn
+              var $compose_submit = $('<div type="button" id="compose_submit"></div>');
+              $compose_submit.text('POST')
+              $compose_submit.appendTo($compose_hud);
+
+              // compose character count
+              var $compose_count = $('<p id="char_count"></p>');
+              var compose_count = 140;
+              $compose_count.text("140");
+              $compose_count.appendTo($compose_hud);
+
+              // search results message
+              var $searchmessage = $('<p id="searchmessage"></p>');
+              var search_results = {
+                  tweets: [],
+                  query: "",
+                  source: ''
+              };
+              $searchmessage.text('');
+              $searchmessage.appendTo($compose_bubble);
+
+              // new tweets notification
+              var $tweetNotifyArea = $('<div id="tweetNotifyArea"></div>');
+              $tweetNotifyArea.appendTo($body);
+              var $tweetnotify = $('<p id="tweetnotify"></p>');
+              $tweetnotify.text('Show ' + window.tweets_pending.length + ' new Twittles');
+              $tweetnotify.appendTo($tweetNotifyArea);
+
+              // feed container
+              var $feed = $('<section id="feed"></section>');
+              $feed.appendTo($body);
+
+              // new tweets notification
+              var $oldTweetsNotifyArea = $('<div id="oldTweetsNotifyArea"></div>');
+              $oldTweetsNotifyArea.appendTo($body);
+              var $oldTweetsNotify = $('<p id="oldTweetsNotify"></p>');
+              $oldTweetsNotify.text('Woah buddy, You\'ve reached the oldest twittle!');
+              $oldTweetsNotify.appendTo($oldTweetsNotifyArea);
+
+              // set visitor
+              window.visitor = 'visitor';
+              window.streams.users[visitor] = [];
+
+
+
+            // BEHAVIOUR
+
+
+              // remove focused states on click outsides
+              $(window).on('click', function(e) {
+
+                  var active = e.target;
+
+                  var exceptions = [$compose_field[0], $compose_submit[0], $compose_bubble[0], $compose_hud[0], $compose_count[0], $tweetnotify[0]];
+
+                  if (!exceptions.some(function(target) {
+                          return active === target;
+                      })) {
+                      reset_compose_bubble();
+                      $compose_field.delay(1200).text(compose_placeholder);
+
+                  }
+
+                  // if clicked on user, filter him
+                  if ($(active).data('user')) {
+                      userSearch($(active).data('user'));
+                  }
+              });
+
+
+              // search
+              $searchfield.on('keyup', function(e) {
+
+
+
+                  var code = (e.keyCode ? e.keyCode : e.which);
+                  if (code == 13) { //Enter keycode
+                      searchicon_toggle("close");
+                      search_twittler();
+                  }
+              });
+
+              $searchicon.on('click', function() {
+
+                  // if icon_search, do search
+                  if ($searchicon.attr('src') === icon_search) {
+                      search_twittler();
+                  }
+                  // else if icon_close, go back to main source
+                  else if ($searchicon.attr('src') === icon_close) {
+                      searchicon_toggle("search");
+                      $searchfield.text('');
+                      search_results.source = 'home';
+                      search_results.tweets = window.streams.home;
+                      search_results.query = '';
+                      updateTweetsSource(search_results);
+                  }
+              })
+
+
+              // activate compose
+              $compose_field.on('click', function() {
+
+                  if ($compose_field.text() === compose_placeholder) {
+                      $compose_field.text('').removeClass('placeholder');
+                      $compose_hud.show();
+                  }
+              });
+
+              // on compose change
+              $compose_field.on('keyup', function(e) {
+
+                  var composetext = $compose_field.text();
+
+                  var total = compose_count - composetext.length;
+
+                  $compose_count.text(total);
+
+                  if (total < 0) {
+                      $compose_count.css('color', 'red');
+                  } else {
+                      $compose_count.css('color', '#dcd5fd');
+                  }
+
+                  var code = (e.keyCode ? e.keyCode : e.which);
+                  if (code == 13) { //Enter keycode
+                      $compose_submit.trigger('click');
+                  }
+
+              });
+
+
+              // get new tweets on scroll bottom
+              $(window).on('scroll', function() {
+
+                  if (atBottom()) {
+                      setTimeout(getOlderTweets, 500);
+                  }
+              });
+
+
+              // reveal tweet immediately
+              // show rest of newer tweets?
+              $compose_submit.on('click', composeSubmit);
+
+              $tweetnotify.on('click', showNewTweets);
+
+
+
+            // Set in Motion!
+            getOlderTweets();
+            checkNewTweets();
+
+        });
     </script>
-  </body>
+</body>
+
 </html>
