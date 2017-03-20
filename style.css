@@ -25,8 +25,22 @@ header {
   margin: 0 0 0 20px;
 }
 
+#title:hover{
+  cursor: pointer;
+  /*text-shadow: 1px 1px rgb(180, 170, 255);*/
+}
+
 #birdie{
+  transition: all .1s ease-in;
   transform: translateX(-100px);
+  -webkit-filter: brightness(5); 
+  filter: brightness(5);
+}
+
+#birdie:hover {
+  
+  transform: translateX(-100px) scale(1.25);
+  cursor: pointer;
 }
 
 #search {

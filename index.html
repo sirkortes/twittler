@@ -33,13 +33,13 @@
                           return ((atime < btime) ? 1 : ((atime > btime) ? -1 : 0));
                       }
                   });
-              }
+              };
 
               // lets you know if scrolled to end of feed
               var atBottom = function() {
                   // 
                   return ($(window).scrollTop() + $(window).height() === $(document).height());
-              }
+              };
 
               // formats tweet time
               var timeAgo = function(milliseconds) {
@@ -69,7 +69,7 @@
 
                       return secs + "s";
                   }
-              }
+              };
 
 
 
@@ -116,7 +116,7 @@
                   }
 
                   updateTweetsSource(search_results);
-              }
+              };
 
 
               var updateTweetsSource = function(search_results) {
@@ -141,7 +141,7 @@
                   $feed.html('');
                   getOlderTweets();
                   checkNewTweets();
-              }
+              };
 
               var searchicon_toggle = function(pick) {
 
@@ -161,14 +161,13 @@
                           height: 20
                       }).css("padding", "0px");
                   }
-
-              }
+              };
 
               var userSearch = function(user) {
                   $searchfield.text(user);
-                  searchicon_toggle();
+                  searchicon_toggle("close");
                   search_twittler();
-              }
+              };
 
               var updateSearchMessage = function(x) {
 
@@ -191,8 +190,7 @@
 
                       $searchmessage.text(long + (long > 1 ? ' Twittles' : ' Twittle') + ' Twittles match \'' + search_results.query + '\'');
                   }
-
-              }
+              };
 
               // 
               // for NEW tweets
@@ -235,18 +233,18 @@
                   }
 
                   setTimeout(checkNewTweets, 2000);
-              }
+              };
 
               var updateTweetsPending = function(newtweets) {
 
                   window.tweets_pending = window.tweets_pending.concat(newtweets);
-              }
+              };
 
               var updateTweetsNotify = function() {
                   // update the notification
                   var long = window.tweets_pending.length;
                   $tweetnotify.text('Show ' + long + ' new ' + (long > 1 ? 'Twittles' : 'Twittle')).show();
-              }
+              };
 
               var showNewTweets = function() {
                   $tweetnotify.hide();
@@ -254,7 +252,7 @@
                   feedTweets(window.tweets_pending, 'top');
                   updateSearchMessage(window.tweets_pending.length);
                   window.tweets_pending = [];
-              }
+              };
 
               // 
               // for OLD tweets
@@ -272,8 +270,7 @@
                   } else {
                       $oldTweetsNotify.show();
                   }
-
-              }
+              };
 
               // 
               // for SHOWING tweets
@@ -286,7 +283,8 @@
                       var newTime = timeAgo($(tweetdate).attr('data-ms'));
                       $(tweetdate).html(newTime);
                   });
-              }
+              };
+
 
               var feedTweets = function(tweets, target) {
 
@@ -295,7 +293,8 @@
                       create(tweet, target, delay);
                       delay += 80;
                   });
-              }
+              };
+
 
               var create = function(tweet, target, delay) {
 
@@ -316,7 +315,8 @@
                   $tweet_date.text(tweetime).appendTo($tweet);
 
                   insert($tweet, target, delay);
-              }
+              };
+
 
               var insert = function(tweet, target, delay) {
 
@@ -335,7 +335,7 @@
                       }, 100);
 
                   }, delay);
-              }
+              };
 
 
               // 
@@ -348,7 +348,8 @@
                   $compose_hud.hide();
                   $compose_count.text(140);
                   $compose_field.blur();
-              }
+              };
+
 
               var composeSubmit = function() {
                   // if text is > 140, keep open and bounce red number
@@ -368,9 +369,21 @@
                       writeTweet(message);
                       reset_compose_bubble();
                       checkNewTweets(message);
-                      // $compose_field.blur();
                   }
-              }
+              };
+
+              // 
+              // navigation
+              // 
+
+              var goToHomeFeed = function(){
+                  searchicon_toggle("search");
+                  $searchfield.text('');
+                  search_results.source = 'home';
+                  search_results.tweets = window.streams.home;
+                  search_results.query = '';
+                  updateTweetsSource(search_results);
+                };
 
 
 
@@ -465,7 +478,7 @@
               var $oldTweetsNotifyArea = $('<div id="oldTweetsNotifyArea"></div>');
               $oldTweetsNotifyArea.appendTo($body);
               var $oldTweetsNotify = $('<p id="oldTweetsNotify"></p>');
-              $oldTweetsNotify.text('Woah buddy, You\'ve reached the oldest twittle!');
+              $oldTweetsNotify.text('No more previous tweetles!');
               $oldTweetsNotify.appendTo($oldTweetsNotifyArea);
 
               // set visitor
@@ -515,16 +528,12 @@
 
                   // if icon_search, do search
                   if ($searchicon.attr('src') === icon_search) {
+                    searchicon_toggle("close");
                       search_twittler();
                   }
                   // else if icon_close, go back to main source
                   else if ($searchicon.attr('src') === icon_close) {
-                      searchicon_toggle("search");
-                      $searchfield.text('');
-                      search_results.source = 'home';
-                      search_results.tweets = window.streams.home;
-                      search_results.query = '';
-                      updateTweetsSource(search_results);
+                      goToHomeFeed();
                   }
               })
 
@@ -560,9 +569,11 @@
 
               });
 
+              $birdie.on('click', goToHomeFeed );
+
 
               // get new tweets on scroll bottom
-              $(window).on('scroll', function() {
+              $(window).on('scroll touchmove', function() {
 
                   if (atBottom()) {
                       setTimeout(getOlderTweets, 500);
@@ -576,6 +587,7 @@
 
               $tweetnotify.on('click', showNewTweets);
 
+              $title.on('click', goToHomeFeed );
 
 
             // Set in Motion!
